@@ -2,5 +2,6 @@
 
 using System.Reflection;
 
-var visitor = new TypeStructureVisitor.TypeStructureVisitor(typeof(int)).UseRecursionDepthLimit(2);
-Console.WriteLine(visitor.Visit());
+using var writer = new StreamWriter(Console.OpenStandardOutput());
+var visitor = new TypeStructureVisitor.TypeStructureVisitor(typeof(Assembly));
+visitor.Visit(writer);
