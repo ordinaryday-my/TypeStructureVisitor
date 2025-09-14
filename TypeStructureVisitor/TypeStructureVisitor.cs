@@ -1,5 +1,5 @@
 ﻿using System.Reflection;
-using System.Text;
+using System.Runtime.CompilerServices;
 
 namespace TypeStructureVisitor;
 
@@ -27,10 +27,12 @@ public sealed class TypeStructureVisitor
         _typeMethodsInfos = visitType.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public |
                                                  BindingFlags.NonPublic);
         _methodsParametersInfos = [];
-        foreach(var method in _typeMethodsInfos)
+        foreach (var method in _typeMethodsInfos)
         {
-            _methodsParametersInfos[method] = method.GetParameters(); // TODO: 过滤自动生成方法
+            if(!method.GetCustomAttributes().OfType<CompilerGeneratedAttribute>().Any())
+                _methodsParametersInfos[method] = method.GetParameters();
         }
+
         _typePropertiesInfos = visitType.GetProperties(BindingFlags.Instance | BindingFlags.Static |
                                                        BindingFlags.Public | BindingFlags.NonPublic);
         _visitedTypes = new HashSet<Type>();
@@ -52,10 +54,12 @@ public sealed class TypeStructureVisitor
         _typeMethodsInfos = visitType.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public |
                                                  BindingFlags.NonPublic);
         _methodsParametersInfos = [];
-        foreach(var method in _typeMethodsInfos)  // TODO: 过滤自动生成方法
+        foreach (var method in _typeMethodsInfos) 
         {
-            _methodsParametersInfos[method] = method.GetParameters();
+            if(!method.GetCustomAttributes().OfType<CompilerGeneratedAttribute>().Any())
+                _methodsParametersInfos[method] = method.GetParameters();
         }
+
         _typePropertiesInfos = visitType.GetProperties(BindingFlags.Instance | BindingFlags.Static |
                                                        BindingFlags.Public | BindingFlags.NonPublic);
         _indentationLevel = indentationLevel;
@@ -99,6 +103,8 @@ public sealed class TypeStructureVisitor
             var typeName = _visitType.FullName;
             var deeperIndentation =
                 CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel + 1);
+            var deeperdeeperIndentation =
+                CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel + 2);
 
             // 输出字段统计信息
             writer.WriteLine($"{_indentation}Type {typeName} Has {_typeFieldsInfos.Length} Fields");
@@ -117,7 +123,7 @@ public sealed class TypeStructureVisitor
                 VisitProperties(deeperIndentation, writer);
                 writer.WriteLine($"{_indentation}}}");
             }
-            
+
             // 输出方法统计信息
             writer.WriteLine($"{_indentation}Type {typeName} Has {_typePropertiesInfos.Length} Methods");
             if (_typeMethodsInfos.Length != 0)
@@ -140,123 +146,123 @@ public sealed class TypeStructureVisitor
         }
     }
 
-private void VisitMethods(string deeperIndentation, TextWriter writer)
-{
-    foreach (var methodInfo in _typeMethodsInfos)
+// 修改 VisitMethods 方法，移除方法间多余空行
+    private void VisitMethods(string indentation, TextWriter writer)
     {
-        // 方法基本信息 - 使用统一缩进
-        writer.WriteLine($"{_indentation}Method: {methodInfo.Name}");
-        
-        // 方法返回类型 - 增加一级缩进
-        string returnTypeIndent = CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel + 1);
-        writer.WriteLine($"{returnTypeIndent}Return Type: {methodInfo.ReturnType.FullName}");
-        
-        // 递归访问返回类型
-        var returnTypeVisitor = new TypeStructureVisitor(methodInfo.ReturnType, _option, _indentationLevel + 2, _visitedTypes);
-        returnTypeVisitor.Visit(writer);
-        
-        // 方法参数信息
-        var parameters = _methodsParametersInfos[methodInfo];
-        writer.WriteLine($"{returnTypeIndent}Parameters ({parameters.Length}):");
-        
-        if (parameters.Length > 0)
+        foreach (var ((methodInfo, parameters), i) in _methodsParametersInfos.Zip(Enumerable.Range(0, _methodsParametersInfos.Count)))
         {
-            // 参数缩进比方法信息多两级
-            string parameterIndent = CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel + 2);
-            VisitMethodParameters(parameterIndent, parameters, writer);
-        }
-        
-        // 方法间添加分隔线提高可读性
-        writer.WriteLine();
-    }
-}
+            // 方法基本信息
+            writer.Write($"{indentation}Method {methodInfo.Name}");
 
-private void VisitMethodParameters(string parameterIndent, ParameterInfo[] parameters, TextWriter writer)
-{
-    foreach (var parameterInfo in parameters)
-    {
-        // 处理ref/out参数的显示
-        string parameterModifier = string.Empty;
-        if (parameterInfo.IsOut)
-            parameterModifier = "out ";
-        else if (parameterInfo.ParameterType.IsByRef && !parameterInfo.IsOut)
-            parameterModifier = "ref ";
-        
-        // 参数基本信息
-        writer.WriteLine($"{parameterIndent}Parameter: {parameterInfo.Name}");
-        
-        // 参数类型信息 - 再增加一级缩进
-        var paramTypeIndent = CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel + 3);
-        // 安全获取参数类型名称，处理可能的null值
-        string typeName = "unknown"; // 默认值，确保不会为null
-        Type paramType = parameterInfo.ParameterType;
+            // 方法返回类型
+            string returnTypeIndent =
+                CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel + 1);
+            writer.WriteLine($" Has Return Type: {methodInfo.ReturnType.FullName}");
 
-        {
-            // 处理引用类型的"&"后缀
-            string rawTypeName = paramType.FullName ?? paramType.Name; // 优先用FullName，缺失则用Name
-            typeName = paramType.IsByRef ? rawTypeName.TrimEnd('&') : rawTypeName;
-        }
+            // 递归访问返回类型
+            var returnTypeVisitor =
+                new TypeStructureVisitor(methodInfo.ReturnType, _option, _indentationLevel + 1, _visitedTypes);
+            returnTypeVisitor.Visit(writer);
 
-        writer.WriteLine($"{paramTypeIndent}Type: {parameterModifier}{typeName}");
+            // 方法参数信息
+            writer.WriteLine($"{indentation}Has {parameters.Length} Parameters");
 
-        
-        // 处理params参数标记
-        if (parameterInfo.IsDefined(typeof(ParamArrayAttribute), false))
-        {
-            writer.WriteLine($"{paramTypeIndent}Attribute: params");
-        }
-        
-        // 递归访问参数类型
-        // 安全获取参数的实际类型，避免空引用异常
-        var actualType = parameterInfo.ParameterType;
-        if (actualType.IsByRef)
-        {
-            // 先获取元素类型，若为null则使用原始类型作为备选
-            actualType = actualType.GetElementType() ?? actualType;
-        }
-        var paramTypeVisitor = new TypeStructureVisitor(actualType, _option, _indentationLevel + 3, _visitedTypes);
-        paramTypeVisitor.Visit(writer);
-        
-        // 参数间添加空行分隔
-        if (parameterInfo != parameters.Last())
-        {
-            writer.WriteLine();
+            if (parameters.Length > 0)
+            {
+                writer.WriteLine($"{indentation}{{");
+                string parameterIndent =
+                    CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel + 1);
+                VisitMethodParameters(parameterIndent, parameters, writer);
+                writer.WriteLine($"{indentation}}}");
+            }
+
+            // 仅在不是最后一个方法时添加分隔空行
+            if (i != _typeMethodsInfos.Length - 1)
+            {
+                writer.WriteLine();
+            }
         }
     }
-}
 
+// 修改 VisitMethodParameters 方法，移除参数间多余空行
+    private void VisitMethodParameters(string parameterIndent, ParameterInfo[] parameters, TextWriter writer)
+    {
+        for (int i = 0; i < parameters.Length; i++)
+        {
+            var parameterInfo = parameters[i];
+            string parameterModifier = string.Empty;
+            if (parameterInfo.IsOut)
+                parameterModifier = "out ";
+            else if (parameterInfo.ParameterType.IsByRef && !parameterInfo.IsOut)
+                parameterModifier = "ref ";
 
-    // 改进：适配 TextWriter 输出，移除 StringBuilder 拼接
+            writer.Write($"{parameterIndent}Parameter {parameterInfo.Name}");
+            
+            string typeName = "unknown";
+            Type paramType = parameterInfo.ParameterType;
+
+            {
+                string rawTypeName = paramType.FullName ?? paramType.Name;
+                typeName = paramType.IsByRef ? rawTypeName.TrimEnd('&') : rawTypeName;
+            }
+
+            writer.WriteLine($" Has Type: {parameterModifier}{typeName}");
+
+            var actualType = parameterInfo.ParameterType;
+            if (actualType.IsByRef)
+            {
+                actualType = actualType.GetElementType() ?? actualType;
+            }
+
+            var paramTypeVisitor = new TypeStructureVisitor(actualType, _option, _indentationLevel + 2, _visitedTypes);
+            paramTypeVisitor.Visit(writer);
+
+            // 仅在不是最后一个参数时添加分隔空行
+            if (i != parameters.Length - 1)
+            {
+                writer.WriteLine();
+            }
+        }
+    }
+
+// 修改 VisitProperties 方法，移除属性间多余空行
     private void VisitProperties(string deeperIndentation, TextWriter writer)
     {
-        foreach (var propertyInfo in _typePropertiesInfos)
+        for (int i = 0; i < _typePropertiesInfos.Length; i++)
         {
-            // 输出属性名称和类型
+            var propertyInfo = _typePropertiesInfos[i];
             writer.WriteLine(
                 $"{deeperIndentation}Name={propertyInfo.Name} Has Value Type={propertyInfo.PropertyType.FullName}");
 
-            // 递归访问属性的类型
-
             var insideVisitor = new TypeStructureVisitor(propertyInfo.PropertyType, _option, _indentationLevel + 1,
                 _visitedTypes);
-            insideVisitor.Visit(writer); // 递归调用改进后的 Visit 方法
-            writer.WriteLine();
+            insideVisitor.Visit(writer);
+
+            // 仅在不是最后一个属性时添加分隔空行
+            if (i != _typePropertiesInfos.Length - 1)
+            {
+                writer.WriteLine();
+            }
         }
     }
 
-    // 改进：适配 TextWriter 输出，移除 StringBuilder 拼接
+// 修改 VisitFields 方法，移除字段间多余空行
     private void VisitFields(string deeperIndentation, TextWriter writer)
     {
-        foreach (var fieldInfo in _typeFieldsInfos)
+        for (int i = 0; i < _typeFieldsInfos.Length; i++)
         {
-            // 输出字段名称和类型 TODO: 为泛型类型做特化
+            var fieldInfo = _typeFieldsInfos[i];
             writer.WriteLine($"{deeperIndentation}Name={fieldInfo.Name} HasType={fieldInfo.FieldType.FullName}");
 
-            // 递归访问字段的类型
             var insideVisitor =
                 new TypeStructureVisitor(fieldInfo.FieldType, _option, _indentationLevel + 1, _visitedTypes);
-            insideVisitor.Visit(writer); // 递归调用改进后的 Visit 方法
-            writer.WriteLine();
+            insideVisitor.Visit(writer);
+
+            // 仅在不是最后一个字段时添加分隔空行
+            if (i != _typeFieldsInfos.Length - 1)
+            {
+                writer.WriteLine();
+            }
         }
     }
 }
