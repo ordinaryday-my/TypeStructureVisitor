@@ -2,6 +2,7 @@
 using System.Text;
 
 namespace TypeStructureVisitor;
+
 // TODO: 看与ai的聊天改进代码
 // TODO: 添加直接输出的选项
 // TODO: 消除警告
@@ -21,11 +22,14 @@ public sealed class TypeStructureVisitor
     {
         _option = option ?? IndentationOption.Default;
         _visitType = visitType;
-        _typeFieldsInfos = visitType.GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-        _typeMethodsInfos = visitType.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-        _typePropertiesInfos = visitType.GetProperties(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+        _typeFieldsInfos = visitType.GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public |
+                                               BindingFlags.NonPublic);
+        _typeMethodsInfos = visitType.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public |
+                                                 BindingFlags.NonPublic);
+        _typePropertiesInfos = visitType.GetProperties(BindingFlags.Instance | BindingFlags.Static |
+                                                       BindingFlags.Public | BindingFlags.NonPublic);
         _visitedTypes = new HashSet<Type>();
-        _indentation = CalculateIndentation(_option.IndentationString,_option.Repeat, _indentationLevel);
+        _indentation = CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel);
     }
 
     public TypeStructureVisitor UseRecursionDepthLimit(int limit)
@@ -38,9 +42,12 @@ public sealed class TypeStructureVisitor
     {
         _option = option;
         _visitType = visitType;
-        _typeFieldsInfos = visitType.GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-        _typeMethodsInfos = visitType.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-        _typePropertiesInfos = visitType.GetProperties(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+        _typeFieldsInfos = visitType.GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public |
+                                               BindingFlags.NonPublic);
+        _typeMethodsInfos = visitType.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public |
+                                                 BindingFlags.NonPublic);
+        _typePropertiesInfos = visitType.GetProperties(BindingFlags.Instance | BindingFlags.Static |
+                                                       BindingFlags.Public | BindingFlags.NonPublic);
         _indentationLevel = indentationLevel;
         _indentation = CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel);
         _visitedTypes = visited;
@@ -53,8 +60,8 @@ public sealed class TypeStructureVisitor
                     Convert.ToInt32(indentationLevel * repeat))
                 .SelectMany(s => s)
                 .ToArray()
-            );
-    
+        );
+
 
     // 改进：添加 ref TextWriter 参数，结果直接输出到 TextWriter
     public void Visit(TextWriter writer)
@@ -80,14 +87,15 @@ public sealed class TypeStructureVisitor
         try
         {
             var typeName = _visitType.FullName;
-            var deeperIndentation = CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel + 1);
+            var deeperIndentation =
+                CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel + 1);
 
             // 输出字段统计信息
             writer.WriteLine($"{_indentation}Type {typeName} Has {_typeFieldsInfos.Length} Fields");
             if (_typeFieldsInfos.Length != 0)
             {
                 writer.WriteLine($"{_indentation}{{");
-                VisitFields(deeperIndentation, writer); 
+                VisitFields(deeperIndentation, writer);
                 writer.WriteLine($"{_indentation}}}");
             }
 
@@ -96,7 +104,7 @@ public sealed class TypeStructureVisitor
             if (_typePropertiesInfos.Length != 0)
             {
                 writer.WriteLine($"{_indentation}{{");
-                VisitProperties(deeperIndentation, writer); 
+                VisitProperties(deeperIndentation, writer);
                 writer.WriteLine($"{_indentation}}}");
             }
 
@@ -119,19 +127,15 @@ public sealed class TypeStructureVisitor
         foreach (var propertyInfo in _typePropertiesInfos)
         {
             // 输出属性名称和类型
-            writer.WriteLine($"{deeperIndentation}Name={propertyInfo.Name} Has Value Type={propertyInfo.PropertyType.FullName}");
-            
+            writer.WriteLine(
+                $"{deeperIndentation}Name={propertyInfo.Name} Has Value Type={propertyInfo.PropertyType.FullName}");
+
             // 递归访问属性的类型
-            if (_visitedTypes.Add(propertyInfo.PropertyType))
-            {
-                var insideVisitor = new TypeStructureVisitor(propertyInfo.PropertyType, _option, _indentationLevel + 1, _visitedTypes);
-                insideVisitor.Visit(writer); // 递归调用改进后的 Visit 方法
-            }
-            else
-            {
-                writer.WriteLine($"{deeperIndentation}Type {propertyInfo.PropertyType.FullName} Has Been Visited.");
-                writer.WriteLine();
-            }
+
+            var insideVisitor = new TypeStructureVisitor(propertyInfo.PropertyType, _option, _indentationLevel + 1,
+                _visitedTypes);
+            insideVisitor.Visit(writer); // 递归调用改进后的 Visit 方法
+            writer.WriteLine();
         }
     }
 
@@ -142,19 +146,12 @@ public sealed class TypeStructureVisitor
         {
             // 输出字段名称和类型 TODO: 为泛型类型做特化
             writer.WriteLine($"{deeperIndentation}Name={fieldInfo.Name} HasType={fieldInfo.FieldType.FullName}");
-            
+
             // 递归访问字段的类型
-            if (_visitedTypes.Add(fieldInfo.FieldType))
-            {
-                var insideVisitor = new TypeStructureVisitor(fieldInfo.FieldType, _option, _indentationLevel + 1, _visitedTypes);
-                insideVisitor.Visit(writer); // 递归调用改进后的 Visit 方法
-                writer.WriteLine();
-            }
-            else
-            {
-                writer.WriteLine($"{deeperIndentation}Type {fieldInfo.FieldType.FullName} Has Been Visited.");
-                writer.WriteLine();
-            }
+            var insideVisitor =
+                new TypeStructureVisitor(fieldInfo.FieldType, _option, _indentationLevel + 1, _visitedTypes);
+            insideVisitor.Visit(writer); // 递归调用改进后的 Visit 方法
+            writer.WriteLine();
         }
     }
 }
