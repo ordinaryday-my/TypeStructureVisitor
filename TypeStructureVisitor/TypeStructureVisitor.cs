@@ -5,6 +5,7 @@ namespace TypeStructureVisitor;
 
 // TODO: 看与ai的聊天改进代码
 // TODO: 消除警告
+// TODO: 将一部分构造放入Builder中
 public sealed class TypeStructureVisitor
 {
     private readonly Type _visitType;
@@ -12,7 +13,9 @@ public sealed class TypeStructureVisitor
     private readonly MethodInfo[] _typeMethodsInfos;
     private readonly Dictionary<MethodInfo, ParameterInfo[]> _methodsParametersInfos;
     private readonly PropertyInfo[] _typePropertiesInfos;
-    private readonly uint _indentationLevel = 0;
+    private readonly ConstructorInfo[] _typeConstructorsInfos;
+    private readonly Dictionary<ConstructorInfo, ParameterInfo[]> _constructorsParametersInfos;
+    private readonly uint _indentationLevel;
     private readonly string _indentation;
     private readonly IndentationOption _option;
     private readonly HashSet<Type> _visitedTypes;
@@ -36,6 +39,13 @@ public sealed class TypeStructureVisitor
 
         _typePropertiesInfos = visitType.GetProperties(BindingFlags.Instance | BindingFlags.Static |
                                                        BindingFlags.Public | BindingFlags.NonPublic);
+        _typeConstructorsInfos = visitType.GetConstructors(BindingFlags.Instance | BindingFlags.Static |
+                                                           BindingFlags.Public | BindingFlags.NonPublic);
+        _constructorsParametersInfos = [];
+        foreach (var constructor in _typeConstructorsInfos)
+        {
+            _constructorsParametersInfos[constructor] = constructor.GetParameters();
+        }
         _visitedTypes = new HashSet<Type>();
         _indentation = CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel);
     }
@@ -64,6 +74,13 @@ public sealed class TypeStructureVisitor
 
         _typePropertiesInfos = visitType.GetProperties(BindingFlags.Instance | BindingFlags.Static |
                                                        BindingFlags.Public | BindingFlags.NonPublic);
+        _typeConstructorsInfos = visitType.GetConstructors(BindingFlags.Instance | BindingFlags.Static |
+                                                           BindingFlags.Public | BindingFlags.NonPublic);
+        _constructorsParametersInfos = [];
+        foreach (var constructor in _typeConstructorsInfos)
+        {
+            _constructorsParametersInfos[constructor] = constructor.GetParameters();
+        }
         _indentationLevel = indentationLevel;
         _indentation = CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel);
         _visitedTypes = visited;
@@ -105,8 +122,6 @@ public sealed class TypeStructureVisitor
             var typeName = _visitType.FullName;
             var deeperIndentation =
                 CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel + 1);
-            var deeperdeeperIndentation =
-                CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel + 2);
 
             // 输出字段统计信息
             writer.WriteLine($"{_indentation}Type {typeName} Has {_typeFieldsInfos.Length} Fields");
@@ -135,7 +150,14 @@ public sealed class TypeStructureVisitor
                 writer.WriteLine($"{_indentation}}}");
             }
             
-            // TODO: 访问构造函数（需通过 Type.GetConstructors 获取构造函数信息，添加 VisitConstructors 方法）
+            writer.WriteLine($"{_indentation} Type {typeName} Has {_typeConstructorsInfos.Length} Constructors.");
+            if (_typeConstructorsInfos.Length != 0)
+            {
+                writer.WriteLine($"{_indentation}{{");
+                VisitConstructors(deeperIndentation, writer);
+                writer.WriteLine($"{_indentation}}}");
+            }
+            
             // TODO: 访问事件（通过 Type.GetEvents 获取事件信息，添加 VisitEvents 方法）
             // TODO: 访问嵌套类型（通过 Type.GetNestedTypes 获取嵌套类型信息，递归调用 Visit）
         }
@@ -150,7 +172,32 @@ public sealed class TypeStructureVisitor
         }
     }
 
-// 修改 VisitMethods 方法，移除方法间多余空行
+    private void VisitConstructors(string deeperIndentation, TextWriter writer)
+    {
+        foreach (var ((constructorInfo, parameters), i) in _constructorsParametersInfos.Zip(Enumerable.Range(0,_constructorsParametersInfos.Count)))
+        {
+            // 构造函数基本信息
+            writer.WriteLine($"{deeperIndentation}Constructor <{i}> Has {parameters.Length} Parameters");
+
+            if (parameters.Length > 0)
+            {
+                writer.WriteLine($"{deeperIndentation}{{");
+                string parameterIndent =
+                    CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel + 2);
+                VisitMethodParameters(parameterIndent, parameters, writer);
+                writer.WriteLine($"{deeperIndentation}}}");
+            }
+
+            // 仅在不是最后一个构造函数时添加分隔空行
+            if (i != _constructorsParametersInfos.Count - 1)
+            {
+                writer.WriteLine();
+            }
+        }
+        
+    }
+
+    // 修改 VisitMethods 方法，移除方法间多余空行
     private void VisitMethods(string indentation, TextWriter writer)
     {
         foreach (var ((methodInfo, parameters), i) in _methodsParametersInfos.Zip(Enumerable.Range(0, _methodsParametersInfos.Count)))
@@ -159,8 +206,6 @@ public sealed class TypeStructureVisitor
             writer.Write($"{indentation}Method {methodInfo.Name}");
 
             // 方法返回类型
-            string returnTypeIndent =
-                CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel + 1);
             writer.WriteLine($" Has Return Type: {methodInfo.ReturnType.FullName}");
 
             // 递归访问返回类型
@@ -175,7 +220,7 @@ public sealed class TypeStructureVisitor
             {
                 writer.WriteLine($"{indentation}{{");
                 string parameterIndent =
-                    CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel + 1);
+                    CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel + 2);
                 VisitMethodParameters(parameterIndent, parameters, writer);
                 writer.WriteLine($"{indentation}}}");
             }
