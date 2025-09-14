@@ -16,6 +16,7 @@ public sealed class TypeStructureVisitor
     private readonly string _indentation;
     private readonly IndentationOption _option;
     private readonly HashSet<Type> _visitedTypes;
+    private readonly bool _isRoot = true;
     private int _recursionDepthLimit = -1;
 
     public TypeStructureVisitor(Type visitType, IndentationOption? option = null)
@@ -47,6 +48,7 @@ public sealed class TypeStructureVisitor
 
     private TypeStructureVisitor(Type visitType, IndentationOption option, uint indentationLevel, HashSet<Type> visited)
     {
+        _isRoot = false;
         _option = option;
         _visitType = visitType;
         _typeFieldsInfos = visitType.GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public |
@@ -125,16 +127,14 @@ public sealed class TypeStructureVisitor
             }
 
             // 输出方法统计信息
-            writer.WriteLine($"{_indentation}Type {typeName} Has {_typePropertiesInfos.Length} Methods");
+            writer.WriteLine($"{_indentation}Type {typeName} Has {_typeMethodsInfos.Length} Methods");
             if (_typeMethodsInfos.Length != 0)
             {
                 writer.WriteLine($"{_indentation}{{");
                 VisitMethods(deeperIndentation, writer);
                 writer.WriteLine($"{_indentation}}}");
             }
-
-
-            // TODO: 写访问方法的代码（可参考字段/属性逻辑，添加 VisitMethods 方法并适配 TextWriter）
+            
             // TODO: 访问构造函数（需通过 Type.GetConstructors 获取构造函数信息，添加 VisitConstructors 方法）
             // TODO: 访问事件（通过 Type.GetEvents 获取事件信息，添加 VisitEvents 方法）
             // TODO: 访问嵌套类型（通过 Type.GetNestedTypes 获取嵌套类型信息，递归调用 Visit）
@@ -142,7 +142,11 @@ public sealed class TypeStructureVisitor
         finally
         {
             // 无论是否异常，都移除当前类型（避免影响其他分支的访问逻辑）
-            _visitedTypes.Remove(_visitType);
+            if(_isRoot)
+            {
+                _visitedTypes.Clear();
+            }
+            
         }
     }
 
@@ -177,7 +181,7 @@ public sealed class TypeStructureVisitor
             }
 
             // 仅在不是最后一个方法时添加分隔空行
-            if (i != _typeMethodsInfos.Length - 1)
+            if (i != _methodsParametersInfos.Count - 1)
             {
                 writer.WriteLine();
             }
