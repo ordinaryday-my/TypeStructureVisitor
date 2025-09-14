@@ -1,0 +1,14 @@
+F:\CS\TypeStructureVisitor\TypeStructureVisitor\bin\Debug\net9.0\TypeStructureVisitor.exe
+F:\CS\TypeStructureVisitor\TypeStructureVisitor\bin\Debug\net9.0\TypeStructureVisitor.deps.json
+F:\CS\TypeStructureVisitor\TypeStructureVisitor\bin\Debug\net9.0\TypeStructureVisitor.runtimeconfig.json
+F:\CS\TypeStructureVisitor\TypeStructureVisitor\bin\Debug\net9.0\TypeStructureVisitor.dll
+F:\CS\TypeStructureVisitor\TypeStructureVisitor\bin\Debug\net9.0\TypeStructureVisitor.pdb
+F:\CS\TypeStructureVisitor\TypeStructureVisitor\obj\Debug\net9.0\TypeStructureVisitor.GeneratedMSBuildEditorConfig.editorconfig
+F:\CS\TypeStructureVisitor\TypeStructureVisitor\obj\Debug\net9.0\TypeStructureVisitor.AssemblyInfoInputs.cache
+F:\CS\TypeStructureVisitor\TypeStructureVisitor\obj\Debug\net9.0\TypeStructureVisitor.AssemblyInfo.cs
+F:\CS\TypeStructureVisitor\TypeStructureVisitor\obj\Debug\net9.0\TypeStructureVisitor.csproj.CoreCompileInputs.cache
+F:\CS\TypeStructureVisitor\TypeStructureVisitor\obj\Debug\net9.0\TypeStructureVisitor.dll
+F:\CS\TypeStructureVisitor\TypeStructureVisitor\obj\Debug\net9.0\refint\TypeStructureVisitor.dll
+F:\CS\TypeStructureVisitor\TypeStructureVisitor\obj\Debug\net9.0\TypeStructureVisitor.pdb
+F:\CS\TypeStructureVisitor\TypeStructureVisitor\obj\Debug\net9.0\TypeStructureVisitor.genruntimeconfig.cache
+F:\CS\TypeStructureVisitor\TypeStructureVisitor\obj\Debug\net9.0\ref\TypeStructureVisitor.dll
