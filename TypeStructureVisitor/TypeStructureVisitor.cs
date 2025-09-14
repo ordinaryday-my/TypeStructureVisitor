@@ -69,21 +69,22 @@ public sealed class TypeStructureVisitor
         
         result.AppendLine($"{_indentation}Type {typeName} Has {_typeFieldsInfos.Length} Fields");
         
-        result.AppendLine($"{_indentation}{'{'}");
         if (_typeFieldsInfos.Length != 0)
         {
+            result.AppendLine($"{_indentation}{{");
             result.Append(VisitFields(deeperIndentation));
+            result.AppendLine($"{_indentation}}}");
         }
-        result.AppendLine($"{_indentation}{'}'}");
-
+        
         result.AppendLine($"{_indentation}Type {typeName} Has {_typePropertiesInfos.Length} Properties");
-
-        result.AppendLine($"{_indentation}{'{'}");
+        
         if (_typePropertiesInfos.Length != 0)
         {
+            result.AppendLine($"{_indentation}{{");
             result.Append(VisitProperties(deeperIndentation)); // TODO: 实现访问属性
+            result.AppendLine($"{_indentation}}}");
         }
-        result.AppendLine($"{_indentation}{'}'}");
+        
         
         // TODO: 写访问方法的代码
         // TODO: 访问构造函数
@@ -109,7 +110,6 @@ public sealed class TypeStructureVisitor
                 var insideVisitor =
                     new TypeStructureVisitor(propertyType, _option, _indentationLevel + 1, _visitedTypes);
                 result.AppendLine(insideVisitor.Visit().ToString());
-                result.AppendLine($"{_indentation}{'}'}");
             }
             else
             {
