@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 
 namespace TypeStructureVisitor;
 
-// TODO: 看与ai的聊天改进代码
 // TODO: 消除警告
 // TODO: 将一部分构造放入Builder中
 public sealed class TypeStructureVisitor
@@ -210,7 +209,8 @@ public sealed class TypeStructureVisitor
 
             // 递归访问返回类型
             var returnTypeVisitor =
-                new TypeStructureVisitor(methodInfo.ReturnType, _option, _indentationLevel + 1, _visitedTypes);
+                new TypeStructureVisitor(methodInfo.ReturnType, _option, _indentationLevel + 1, _visitedTypes)
+                    .UseRecursionDepthLimit(_recursionDepthLimit);
             returnTypeVisitor.Visit(writer);
 
             // 方法参数信息
@@ -263,7 +263,8 @@ public sealed class TypeStructureVisitor
                 actualType = actualType.GetElementType() ?? actualType;
             }
 
-            var paramTypeVisitor = new TypeStructureVisitor(actualType, _option, _indentationLevel + 2, _visitedTypes);
+            var paramTypeVisitor = new TypeStructureVisitor(actualType, _option, _indentationLevel + 2, _visitedTypes)
+                .UseRecursionDepthLimit(_recursionDepthLimit);
             paramTypeVisitor.Visit(writer);
 
             // 仅在不是最后一个参数时添加分隔空行
@@ -284,7 +285,8 @@ public sealed class TypeStructureVisitor
                 $"{deeperIndentation}Name={propertyInfo.Name} Has Value Type={propertyInfo.PropertyType.FullName}");
 
             var insideVisitor = new TypeStructureVisitor(propertyInfo.PropertyType, _option, _indentationLevel + 1,
-                _visitedTypes);
+                _visitedTypes)
+                .UseRecursionDepthLimit(_recursionDepthLimit);
             insideVisitor.Visit(writer);
 
             // 仅在不是最后一个属性时添加分隔空行
@@ -304,7 +306,8 @@ public sealed class TypeStructureVisitor
             writer.WriteLine($"{deeperIndentation}Name={fieldInfo.Name} HasType={fieldInfo.FieldType.FullName}");
 
             var insideVisitor =
-                new TypeStructureVisitor(fieldInfo.FieldType, _option, _indentationLevel + 1, _visitedTypes);
+                new TypeStructureVisitor(fieldInfo.FieldType, _option, _indentationLevel + 1, _visitedTypes)
+                    .UseRecursionDepthLimit(_recursionDepthLimit);
             insideVisitor.Visit(writer);
 
             // 仅在不是最后一个字段时添加分隔空行

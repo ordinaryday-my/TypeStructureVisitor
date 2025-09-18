@@ -8,12 +8,6 @@ public class MultiTextWriter : TextWriter
     private readonly IReadOnlyCollection<TextWriter> _targetWriters;
     private bool _isDisposed;
 
-    /// <summary>
-    /// 初始化MultipleForwardingTextWriter实例
-    /// </summary>
-    /// <param name="targetWriters">要转发到的目标TextWriter集合</param>
-    /// <exception cref="ArgumentNullException">当目标集合为null时抛出</exception>
-    /// <exception cref="ArgumentException">当目标集合为空时抛出</exception>
     public MultiTextWriter(IEnumerable<TextWriter> targetWriters)
     {
         _targetWriters = new List<TextWriter>(targetWriters ?? throw new ArgumentNullException(nameof(targetWriters)))
@@ -25,81 +19,86 @@ public class MultiTextWriter : TextWriter
         }
     }
 
-    /// <summary>
-    /// 获取第一个目标写入器的编码格式
-    /// </summary>
-    public override Encoding Encoding => _targetWriters.First().Encoding;
+    public override Encoding Encoding 
+    { 
+        get
+        {
+            CheckDisposed();
+            // 检查所有写入器是否有相同的编码
+            var encodings = _targetWriters.Select(w => w.Encoding).Distinct().ToList();
+            if (encodings.Count > 1)
+            {
+                throw new InvalidOperationException("所有目标写入器必须使用相同的编码");
+            }
+            return encodings.First();
+        }
+    }
 
-    /// <summary>
-    /// 将字符写入所有目标流
-    /// </summary>
     public override void Write(char value)
     {
         CheckDisposed();
-        Parallel.ForEach(_targetWriters, writer => writer.Write(value));
+        foreach (var writer in _targetWriters)
+        {
+            writer.Write(value);
+        }
     }
 
-    /// <summary>
-    /// 将字符数组写入所有目标流
-    /// </summary>
     public override void Write(char[] buffer, int index, int count)
     {
         CheckDisposed();
-        Parallel.ForEach(_targetWriters, writer => writer.Write(buffer));
+        foreach (var writer in _targetWriters)
+        {
+            writer.Write(buffer, index, count); // 修正参数传递
+        }
     }
 
-    /// <summary>
-    /// 将字符串写入所有目标流
-    /// </summary>
     public override void Write(string? value)
     {
         CheckDisposed();
-        Parallel.ForEach(_targetWriters, writer => writer.Write(value));
+        foreach (var writer in _targetWriters)
+        {
+            writer.Write(value);
+        }
     }
 
-    /// <summary>
-    /// 写入换行符到所有目标流
-    /// </summary>
     public override void WriteLine()
     {
         CheckDisposed();
-        Parallel.ForEach(_targetWriters, writer => writer.WriteLine());
+        foreach (var writer in _targetWriters)
+        {
+            writer.WriteLine();
+        }
     }
 
-    /// <summary>
-    /// 将带换行符的字符串写入所有目标流
-    /// </summary>
     public override void WriteLine(string? value)
     {
         CheckDisposed();
-        Parallel.ForEach(_targetWriters, writer => writer.WriteLine(value));
+        foreach (var writer in _targetWriters)
+        {
+            writer.WriteLine(value);
+        }
     }
 
-    /// <summary>
-    /// 刷新所有目标流的缓冲区
-    /// </summary>
     public override void Flush()
     {
         CheckDisposed();
-        Parallel.ForEach(_targetWriters, writer => writer.Flush());
+        foreach (var writer in _targetWriters)
+        {
+            writer.Flush();
+        }
     }
 
-    /// <summary>
-    /// 释放所有目标流资源
-    /// </summary>
     protected override void Dispose(bool disposing)
     {
         if (!_isDisposed)
         {
             if (disposing)
             {
-                // 释放所有托管资源
+                // 只释放由当前实例创建的写入器，或明确指定需要由当前实例管理的写入器
                 foreach (var writer in _targetWriters)
                 {
-                    if (writer != Console.Out && writer != Console.Error)
-                    {
-                        writer.Dispose();
-                    }
+                    // 可以考虑引入一个标志来确定是否需要释放传入的写入器
+                    writer.Dispose();
                 }
             }
 
@@ -109,10 +108,6 @@ public class MultiTextWriter : TextWriter
         base.Dispose(disposing);
     }
 
-    /// <summary>
-    /// 检查对象是否已释放
-    /// </summary>
-    /// <exception cref="ObjectDisposedException">当对象已释放时抛出</exception>
     private void CheckDisposed()
     {
         if (_isDisposed)
