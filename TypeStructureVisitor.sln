@@ -2,6 +2,10 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeStructureVisitor", "TypeStructureVisitor\TypeStructureVisitor.csproj", "{D92E8353-8E3E-4FC3-9C01-9581FAFE2410}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeStructureVisitor.Test", "TypeStructureVisitor.Test\TypeStructureVisitor.Test.csproj", "{DD8B34EA-A887-447C-8F38-0A983491C5DA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeStructureVisitor.Runner", "TypeStructureVisitor.Runner\TypeStructureVisitor.Runner.csproj", "{74D418C5-BBA2-4AE2-8736-737954C87D54}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +16,13 @@ Global
 		{D92E8353-8E3E-4FC3-9C01-9581FAFE2410}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D92E8353-8E3E-4FC3-9C01-9581FAFE2410}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D92E8353-8E3E-4FC3-9C01-9581FAFE2410}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD8B34EA-A887-447C-8F38-0A983491C5DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD8B34EA-A887-447C-8F38-0A983491C5DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD8B34EA-A887-447C-8F38-0A983491C5DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD8B34EA-A887-447C-8F38-0A983491C5DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74D418C5-BBA2-4AE2-8736-737954C87D54}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74D418C5-BBA2-4AE2-8736-737954C87D54}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74D418C5-BBA2-4AE2-8736-737954C87D54}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74D418C5-BBA2-4AE2-8736-737954C87D54}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

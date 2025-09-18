@@ -1,6 +1,4 @@
-﻿// TODO: 根据命令行参数指定类型
-
-using System.Reflection;
+﻿using System.Reflection;
 using TypeStructureVisitor;
 
 if (args.Length is not (>= 1 and <= 2))

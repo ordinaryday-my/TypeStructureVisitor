@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 
 namespace TypeStructureVisitor;
 
-// TODO: 消除警告
 // TODO: 将一部分构造放入Builder中
 public sealed class TypeStructureVisitor
 {
@@ -12,7 +11,9 @@ public sealed class TypeStructureVisitor
     private readonly MethodInfo[] _typeMethodsInfos;
     private readonly Dictionary<MethodInfo, ParameterInfo[]> _methodsParametersInfos;
     private readonly PropertyInfo[] _typePropertiesInfos;
+    private readonly EventInfo[] _typeEventsInfos;
     private readonly ConstructorInfo[] _typeConstructorsInfos;
+    private readonly Type[] _typeNestedTypes;
     private readonly Dictionary<ConstructorInfo, ParameterInfo[]> _constructorsParametersInfos;
     private readonly uint _indentationLevel;
     private readonly string _indentation;
@@ -23,28 +24,28 @@ public sealed class TypeStructureVisitor
 
     public TypeStructureVisitor(Type visitType, IndentationOption? option = null)
     {
+        var bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
         _option = option ?? IndentationOption.Default;
         _visitType = visitType;
-        _typeFieldsInfos = visitType.GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public |
-                                               BindingFlags.NonPublic);
-        _typeMethodsInfos = visitType.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public |
-                                                 BindingFlags.NonPublic);
+        _typeFieldsInfos = visitType.GetFields(bindingFlags);
+        _typeMethodsInfos = visitType.GetMethods(bindingFlags);
         _methodsParametersInfos = [];
         foreach (var method in _typeMethodsInfos)
         {
-            if(!method.GetCustomAttributes().OfType<CompilerGeneratedAttribute>().Any())
+            if (!method.GetCustomAttributes().OfType<CompilerGeneratedAttribute>().Any())
                 _methodsParametersInfos[method] = method.GetParameters();
         }
 
-        _typePropertiesInfos = visitType.GetProperties(BindingFlags.Instance | BindingFlags.Static |
-                                                       BindingFlags.Public | BindingFlags.NonPublic);
-        _typeConstructorsInfos = visitType.GetConstructors(BindingFlags.Instance | BindingFlags.Static |
-                                                           BindingFlags.Public | BindingFlags.NonPublic);
+        _typePropertiesInfos = visitType.GetProperties(bindingFlags);
+        _typeConstructorsInfos = visitType.GetConstructors(bindingFlags);
         _constructorsParametersInfos = [];
         foreach (var constructor in _typeConstructorsInfos)
         {
             _constructorsParametersInfos[constructor] = constructor.GetParameters();
         }
+
+        _typeEventsInfos = visitType.GetEvents(bindingFlags);
+        _typeNestedTypes = visitType.GetNestedTypes(bindingFlags);
         _visitedTypes = new HashSet<Type>();
         _indentation = CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel);
     }
@@ -57,29 +58,29 @@ public sealed class TypeStructureVisitor
 
     private TypeStructureVisitor(Type visitType, IndentationOption option, uint indentationLevel, HashSet<Type> visited)
     {
+        var bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
         _isRoot = false;
         _option = option;
         _visitType = visitType;
-        _typeFieldsInfos = visitType.GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public |
-                                               BindingFlags.NonPublic);
-        _typeMethodsInfos = visitType.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public |
-                                                 BindingFlags.NonPublic);
+        _typeFieldsInfos = visitType.GetFields(bindingFlags);
+        _typeMethodsInfos = visitType.GetMethods(bindingFlags);
         _methodsParametersInfos = [];
-        foreach (var method in _typeMethodsInfos) 
+        foreach (var method in _typeMethodsInfos)
         {
-            if(!method.GetCustomAttributes().OfType<CompilerGeneratedAttribute>().Any())
+            if (!method.GetCustomAttributes().OfType<CompilerGeneratedAttribute>().Any())
                 _methodsParametersInfos[method] = method.GetParameters();
         }
 
-        _typePropertiesInfos = visitType.GetProperties(BindingFlags.Instance | BindingFlags.Static |
-                                                       BindingFlags.Public | BindingFlags.NonPublic);
-        _typeConstructorsInfos = visitType.GetConstructors(BindingFlags.Instance | BindingFlags.Static |
-                                                           BindingFlags.Public | BindingFlags.NonPublic);
+        _typePropertiesInfos = visitType.GetProperties(bindingFlags);
+        _typeConstructorsInfos = visitType.GetConstructors(bindingFlags);
         _constructorsParametersInfos = [];
         foreach (var constructor in _typeConstructorsInfos)
         {
             _constructorsParametersInfos[constructor] = constructor.GetParameters();
         }
+
+        _typeEventsInfos = visitType.GetEvents(bindingFlags);
+        _typeNestedTypes = visitType.GetNestedTypes(bindingFlags);
         _indentationLevel = indentationLevel;
         _indentation = CalculateIndentation(_option.IndentationString, _option.Repeat, _indentationLevel);
         _visitedTypes = visited;
@@ -148,32 +149,84 @@ public sealed class TypeStructureVisitor
                 VisitMethods(deeperIndentation, writer);
                 writer.WriteLine($"{_indentation}}}");
             }
-            
-            writer.WriteLine($"{_indentation} Type {typeName} Has {_typeConstructorsInfos.Length} Constructors.");
+
+            writer.WriteLine($"{_indentation}Type {typeName} Has {_typeConstructorsInfos.Length} Constructors.");
             if (_typeConstructorsInfos.Length != 0)
             {
                 writer.WriteLine($"{_indentation}{{");
                 VisitConstructors(deeperIndentation, writer);
                 writer.WriteLine($"{_indentation}}}");
             }
-            
-            // TODO: 访问事件（通过 Type.GetEvents 获取事件信息，添加 VisitEvents 方法）
-            // TODO: 访问嵌套类型（通过 Type.GetNestedTypes 获取嵌套类型信息，递归调用 Visit）
+
+            writer.WriteLine($"{_indentation}Type {typeName} Has {_typeEventsInfos.Length} Events.");
+            if (_typeEventsInfos.Length != 0)
+            {
+                writer.WriteLine($"{_indentation}{{");
+                VisitEvents(deeperIndentation, writer);
+                writer.WriteLine($"{_indentation}}}");
+            }
+
+            writer.WriteLine($"{_indentation}Type {typeName} Has {_typeNestedTypes.Length} Nested Types.");
+            if (_typeNestedTypes.Length != 0)
+            {
+                writer.WriteLine($"{_indentation}{{");
+                VisitNestedTypes(writer);
+                writer.WriteLine($"{_indentation}}}");
+            }
+        }
+        catch (NullReferenceException)
+        {
+            Console.Error.WriteLine("很可能是那不到类型");   
+            Environment.Exit(1);
         }
         finally
         {
             // 无论是否异常，都移除当前类型（避免影响其他分支的访问逻辑）
-            if(_isRoot)
+            if (_isRoot)
             {
                 _visitedTypes.Clear();
             }
+        }
+    }
+
+    private void VisitNestedTypes(TextWriter writer)
+    {
+        foreach (var (type, i) in _typeNestedTypes.Zip(Enumerable.Range(0, _typeNestedTypes.Length)))
+        {
+            var visitor = new TypeStructureVisitor(type, _option, _indentationLevel + 1, _visitedTypes)
+                .UseRecursionDepthLimit(_recursionDepthLimit);
+            visitor.Visit(writer);
             
+            if (i != _typeNestedTypes.Length)
+            {
+                writer.WriteLine();
+            }
+        }
+    }
+
+    private void VisitEvents(string deeperIndentation, TextWriter writer)
+    {
+        foreach (var (eventInfo, i) in _typeEventsInfos.Zip(Enumerable.Range(0, _typeEventsInfos.Length)))
+        {
+            var eventType = eventInfo.EventHandlerType;
+            writer.WriteLine($"{deeperIndentation}Event {eventInfo.Name} Has Delegate {eventType?.FullName ?? "UNKNOWN"}");
+            var visitor =
+                new TypeStructureVisitor(eventType!, _option, _indentationLevel + 1, _visitedTypes).UseRecursionDepthLimit(
+                    _recursionDepthLimit);
+            visitor.Visit(writer);
+
+            // 仅在不是最后一个事件时添加分隔空行
+            if (i != _typeEventsInfos.Length - 1)
+            {
+                writer.WriteLine();
+            }
         }
     }
 
     private void VisitConstructors(string deeperIndentation, TextWriter writer)
     {
-        foreach (var ((constructorInfo, parameters), i) in _constructorsParametersInfos.Zip(Enumerable.Range(0,_constructorsParametersInfos.Count)))
+        foreach (var ((_, parameters), i) in _constructorsParametersInfos.Zip(
+                     Enumerable.Range(0, _constructorsParametersInfos.Count)))
         {
             // 构造函数基本信息
             writer.WriteLine($"{deeperIndentation}Constructor <{i}> Has {parameters.Length} Parameters");
@@ -193,13 +246,13 @@ public sealed class TypeStructureVisitor
                 writer.WriteLine();
             }
         }
-        
     }
 
     // 修改 VisitMethods 方法，移除方法间多余空行
     private void VisitMethods(string indentation, TextWriter writer)
     {
-        foreach (var ((methodInfo, parameters), i) in _methodsParametersInfos.Zip(Enumerable.Range(0, _methodsParametersInfos.Count)))
+        foreach (var ((methodInfo, parameters), i) in _methodsParametersInfos.Zip(Enumerable.Range(0,
+                     _methodsParametersInfos.Count)))
         {
             // 方法基本信息
             writer.Write($"{indentation}Method {methodInfo.Name}");
@@ -246,8 +299,8 @@ public sealed class TypeStructureVisitor
                 parameterModifier = "ref ";
 
             writer.Write($"{parameterIndent}Parameter {parameterInfo.Name}");
-            
-            string typeName = "unknown";
+
+            string typeName;
             Type paramType = parameterInfo.ParameterType;
 
             {
@@ -285,7 +338,7 @@ public sealed class TypeStructureVisitor
                 $"{deeperIndentation}Name={propertyInfo.Name} Has Value Type={propertyInfo.PropertyType.FullName}");
 
             var insideVisitor = new TypeStructureVisitor(propertyInfo.PropertyType, _option, _indentationLevel + 1,
-                _visitedTypes)
+                    _visitedTypes)
                 .UseRecursionDepthLimit(_recursionDepthLimit);
             insideVisitor.Visit(writer);
 

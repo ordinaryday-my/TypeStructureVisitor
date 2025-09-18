@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TypeStructureVisitor")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+03aa0cf828812292828e15f3480894aee96930cd")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1d8e9c6a1cdc88a0e191345209c920f6b5ca545c")]
 [assembly: System.Reflection.AssemblyProductAttribute("TypeStructureVisitor")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TypeStructureVisitor")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
