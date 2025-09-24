@@ -191,7 +191,7 @@ public sealed class TypeStructureVisitor
 
     private void VisitNestedTypes(TextWriter writer)
     {
-        foreach (var (type, i) in _typeNestedTypes.Zip(Enumerable.Range(0, _typeNestedTypes.Length)))
+        foreach (var (i, type) in _typeNestedTypes.Index())
         {
             var visitor = new TypeStructureVisitor(type, _option, _indentationLevel + 1, _visitedTypes)
                 .UseRecursionDepthLimit(_recursionDepthLimit);
@@ -206,7 +206,7 @@ public sealed class TypeStructureVisitor
 
     private void VisitEvents(string deeperIndentation, TextWriter writer)
     {
-        foreach (var (eventInfo, i) in _typeEventsInfos.Zip(Enumerable.Range(0, _typeEventsInfos.Length)))
+        foreach (var (i, eventInfo) in _typeEventsInfos.Index())
         {
             var eventType = eventInfo.EventHandlerType;
             writer.WriteLine($"{deeperIndentation}Event {eventInfo.Name} Has Delegate {eventType?.FullName ?? "UNKNOWN"}");
@@ -225,8 +225,7 @@ public sealed class TypeStructureVisitor
 
     private void VisitConstructors(string deeperIndentation, TextWriter writer)
     {
-        foreach (var ((_, parameters), i) in _constructorsParametersInfos.Zip(
-                     Enumerable.Range(0, _constructorsParametersInfos.Count)))
+        foreach (var (i, (_, parameters)) in _constructorsParametersInfos.Index())
         {
             // 构造函数基本信息
             writer.WriteLine($"{deeperIndentation}Constructor <{i}> Has {parameters.Length} Parameters");
@@ -251,8 +250,7 @@ public sealed class TypeStructureVisitor
     // 修改 VisitMethods 方法，移除方法间多余空行
     private void VisitMethods(string indentation, TextWriter writer)
     {
-        foreach (var ((methodInfo, parameters), i) in _methodsParametersInfos.Zip(Enumerable.Range(0,
-                     _methodsParametersInfos.Count)))
+        foreach (var (i, (methodInfo, parameters)) in _methodsParametersInfos.Index())
         {
             // 方法基本信息
             writer.Write($"{indentation}Method {methodInfo.Name}");
@@ -289,7 +287,7 @@ public sealed class TypeStructureVisitor
 // 修改 VisitMethodParameters 方法，移除参数间多余空行
     private void VisitMethodParameters(string parameterIndent, ParameterInfo[] parameters, TextWriter writer)
     {
-        for (int i = 0; i < parameters.Length; i++)
+        for (var i = 0; i < parameters.Length; i++)
         {
             var parameterInfo = parameters[i];
             string parameterModifier = string.Empty;
