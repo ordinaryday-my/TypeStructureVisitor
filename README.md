@@ -5,17 +5,17 @@ TypeStructureVisitor 是一个用于深度分析和展示 .NET 类型结构的�
 
 ## 功能特点
 
-- \*\*全面解析\*\*：递归获取类型的字段、属性、方法、构造函数、事件及嵌套类型的详细信息
+- **全面解析**：递归获取类型的字段、属性、方法、构造函数、事件及嵌套类型的详细信息
 
-- \*\*深度控制\*\*：支持设置递归深度限制，避免因复杂类型层级导致输出过于庞大
+- **深度控制**：支持设置递归深度限制，避免因复杂类型层级导致输出过于庞大
 
-- \*\*循环引用处理\*\*：自动检测并处理循环引用，防止无限递归
+- **循环引用处理**：自动检测并处理循环引用，防止无限递归
 
-- \*\*多目标输出\*\*：通过 \`MultiTextWriter\` 支持同时输出到多个文本流（如控制台和文件）
+- **多目标输出**：通过 `MultiTextWriter` 支持同时输出到多个文本流（如控制台和文件）
 
-- \*\*缩进定制\*\*：可通过 \`IndentationOption\` 自定义输出的缩进字符和层级重复次数
+- **缩进定制**：可通过 `IndentationOption` 自定义输出的缩进字符和层级重复次数
 
-- \*\*详细信息展示\*\*：包括成员名称、类型、参数（含 ref/out 修饰符）、返回值等信息
+- **详细信息展示**：包括成员名称、类型、参数（含 ref/out 修饰符）、返回值等信息
 
 ## 安装与使用
 
@@ -41,7 +41,7 @@ dotnet build
 
 
 ```
-TypeStructureVisitor \<TypeName> \[TreeDepthLimit=-1]
+TypeStructureVisitor <TypeName> [TreeDepthLimit=-1]
 ```
 
 #### 参数说明
@@ -87,7 +87,7 @@ var type = typeof(System.Collections.Generic.List\<int>);
 
 var visitor = new TypeStructureVisitor(type)
 
-&#x20;   .UseRecursionDepthLimit(2);
+   .UseRecursionDepthLimit(2);
 
 // 输出到文件
 
@@ -95,7 +95,7 @@ using (var writer = new StreamWriter("output.txt"))
 
 {
 
-&#x20;   visitor.Visit(writer);
+   visitor.Visit(writer);
 
 }
 ```
@@ -113,7 +113,7 @@ using (var multiWriter = new MultiTextWriter(writers))
 
 {
 
-&#x20;   visitor.Visit(multiWriter);
+   visitor.Visit(multiWriter);
 
 }
 ```
@@ -127,11 +127,10 @@ using (var multiWriter = new MultiTextWriter(writers))
 
 var options = new IndentationOption&#x20;
 
-{&#x20;
 
-&#x20;   IndentationString = "  ",
+   IndentationString = "  ",
 
-&#x20;   Repeat = 1&#x20;
+   Repeat = 1&#x20;
 
 };
 
@@ -172,6 +171,3 @@ var visitor = new TypeStructureVisitor(type, options);
 
 [MIT](LICENSE)
 
-
-
-```
